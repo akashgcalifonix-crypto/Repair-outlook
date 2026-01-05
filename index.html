@@ -1,498 +1,441 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>TRC Dashboard Pro</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <!-- DataTables for Advanced Dashboard Tables -->
-  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css">
-  
-  <style>
-    body { background-color: #f0f2f5; font-size: 0.9rem; }
-    .nav-link { font-weight: 600; }
-    .hidden { display: none !important; }
-    .card-header { font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
-    .loader { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); z-index: 9999; }
-    .loader-content { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); }
-    .summary-box { border-radius: 8px; color: white; padding: 15px; text-align: center; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TRC System 506</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css">
+    
+    <style>
+        body { background-color: #f0f2f5; font-family: 'Segoe UI', sans-serif; }
+        .nav-tabs .nav-link.active { background-color: #0d6efd; color: white; border-color: #0d6efd; }
+        .nav-tabs .nav-link { color: #495057; font-weight: 600; cursor: pointer; }
+        .hidden { display: none !important; }
+        .card { border-radius: 10px; border: none; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-top: 20px; }
+        .loader { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.85); z-index: 9999; }
+        .spinner-box { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; }
+        .summary-box { padding: 20px; border-radius: 12px; color: white; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    </style>
 </head>
 <body>
 
 <!-- Loader -->
 <div id="loader" class="loader">
-  <div class="loader-content text-center">
-    <div class="spinner-border text-primary" role="status"></div>
-    <div class="mt-2 fw-bold">Processing Data...</div>
-  </div>
+    <div class="spinner-box">
+        <div class="spinner-border text-primary" role="status"></div>
+        <div class="mt-2 fw-bold text-dark">Processing Request...</div>
+    </div>
 </div>
 
 <!-- Header -->
-<nav class="navbar navbar-dark bg-dark shadow-sm mb-3">
-  <div class="container-fluid">
-    <span class="navbar-brand mb-0 h1">🛠️ TRC Management System (506 Dashboard)</span>
-  </div>
+<nav class="navbar navbar-dark bg-dark mb-4 shadow">
+    <div class="container-fluid">
+        <span class="navbar-brand mb-0 h1">🛠️ TRC Tracking System (506 Dashboard)</span>
+    </div>
 </nav>
 
-<div class="container-fluid">
-  <!-- Navigation -->
-  <ul class="nav nav-tabs mb-3" id="mainTab">
-    <li class="nav-item"><button class="nav-link active" onclick="showTab('tab1')">📥 TRC IN</button></li>
-    <li class="nav-item"><button class="nav-link" onclick="loadPhase2()">🔧 Repair Entry</button></li>
-    <li class="nav-item"><button class="nav-link" onclick="loadPhase3()">📤 TRC OUT</button></li>
-    <li class="nav-item"><button class="nav-link text-primary" onclick="loadDashboard()">📊 Inventory Dashboard</button></li>
-    <li class="nav-item"><button class="nav-link text-dark" onclick="loadComponentReport()">🧩 Component Report</button></li>
-    <li class="nav-item ms-auto"><button class="nav-link text-danger border-danger" onclick="showTab('tab7')">📅 Opening Entry</button></li>
-  </ul>
+<div class="container-fluid px-4">
 
-  <!-- TAB 1: TRC IN -->
-  <div id="tab1" class="tab-content">
-    <div class="card shadow-sm">
-      <div class="card-header bg-primary text-white">1. TRC IN (Received)</div>
-      <div class="card-body">
-        <form id="formPhase1">
-          <div class="row g-3">
-            <div class="col-md-2"><label>Date</label><input type="date" id="t1Date" class="form-control"></div>
-            <div class="col-md-2"><label>Time</label><input type="time" id="t1Time" class="form-control"></div>
-            <div class="col-md-2"><label>Line No</label><input type="text" id="t1Line" class="form-control" placeholder="e.g. L1"></div>
-            <div class="col-md-2"><label>Model</label><input type="text" id="t1Model" class="form-control" placeholder="e.g. 131"></div>
-            <div class="col-md-2"><label>In Qty</label><input type="number" id="t1Qty" class="form-control"></div>
-            <div class="col-md-2"><label>Defect</label><input type="text" id="t1Defect" class="form-control"></div>
-            <div class="col-12"><button type="button" class="btn btn-primary w-100" onclick="submitPhase1()">Save IN Data</button></div>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
+    <!-- Navigation Tabs -->
+    <ul class="nav nav-tabs" id="mainTab">
+        <li class="nav-item"><button class="nav-link active" onclick="showTab('tab1')">📥 TRC IN</button></li>
+        <li class="nav-item"><button class="nav-link" onclick="loadPhase2()">🔧 Repair Entry</button></li>
+        <li class="nav-item"><button class="nav-link" onclick="loadPhase3()">📤 TRC OUT</button></li>
+        <li class="nav-item"><button class="nav-link" onclick="loadDashboard()">📊 Dashboard</button></li>
+        <li class="nav-item"><button class="nav-link" onclick="loadCompReport()">🧩 Components</button></li>
+        <li class="nav-item ms-auto"><button class="nav-link btn btn-outline-danger text-danger border-danger" onclick="showTab('tab7')">📅 Opening Stock</button></li>
+    </ul>
 
-  <!-- TAB 2: REPAIR -->
-  <div id="tab2" class="tab-content hidden">
-    <div class="card shadow-sm border-warning">
-      <div class="card-header bg-warning text-dark">2. Repair Process (Pending)</div>
-      <div class="card-body">
-        <div class="table-responsive">
-          <table class="table table-hover table-bordered align-middle">
-            <thead class="table-light"><tr><th>Date</th><th>Line</th><th>Model</th><th>In Qty</th><th>Defect</th><th>Action</th></tr></thead>
-            <tbody id="p2TableBody"></tbody>
-          </table>
+    <!-- TAB 1: TRC IN -->
+    <div id="tab1" class="tab-content">
+        <div class="card p-4">
+            <h5 class="text-primary border-bottom pb-2">1. New TRC Entry</h5>
+            <form id="formPhase1">
+                <div class="row g-3">
+                    <div class="col-md-2"><label>Date</label><input type="date" id="t1Date" class="form-control"></div>
+                    <div class="col-md-2"><label>Time</label><input type="time" id="t1Time" class="form-control"></div>
+                    <div class="col-md-2"><label>Line No</label><input type="text" id="t1Line" class="form-control" placeholder="e.g. L1"></div>
+                    <div class="col-md-2"><label>Model</label><input type="text" id="t1Model" class="form-control" placeholder="e.g. 131"></div>
+                    <div class="col-md-2"><label>In Qty</label><input type="number" id="t1Qty" class="form-control" placeholder="0"></div>
+                    <div class="col-md-2"><label>Defect</label><input type="text" id="t1Defect" class="form-control" placeholder="Issue"></div>
+                </div>
+                <button type="button" class="btn btn-primary mt-4 w-100 fw-bold" onclick="submitPhase1()">SAVE ENTRY</button>
+            </form>
         </div>
-      </div>
     </div>
-  </div>
 
-  <!-- TAB 3: OUT -->
-  <div id="tab3" class="tab-content hidden">
-    <div class="card shadow-sm border-success">
-      <div class="card-header bg-success text-white">3. TRC OUT (Dispatch)</div>
-      <div class="card-body">
-        <div class="table-responsive">
-          <table class="table table-hover table-bordered align-middle">
-            <thead class="table-light"><tr><th>Model</th><th>Repaired Qty</th><th>Engineer</th><th>Out Details</th></tr></thead>
-            <tbody id="p3TableBody"></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- TAB 4: INVENTORY DASHBOARD -->
-  <div id="tab4" class="tab-content hidden">
-    <div class="card shadow-sm">
-      <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
-        <span>4. Main Inventory Dashboard</span>
-        <button class="btn btn-sm btn-light text-dark" onclick="loadDashboard()">🔄 Refresh</button>
-      </div>
-      <div class="card-body">
-        
-        <!-- Filters -->
-        <div class="row mb-3 g-2 align-items-end">
-            <div class="col-md-3">
-                <label>From Date</label>
-                <input type="date" id="filterStart" class="form-control">
-            </div>
-            <div class="col-md-3">
-                <label>To Date</label>
-                <input type="date" id="filterEnd" class="form-control">
-            </div>
-            <div class="col-md-2">
-                <button class="btn btn-dark w-100" onclick="loadDashboard()">Filter Data</button>
+    <!-- TAB 2: REPAIR -->
+    <div id="tab2" class="tab-content hidden">
+        <div class="card p-4 border-warning">
+            <h5 class="text-warning border-bottom pb-2">2. Pending For Repair</h5>
+            <div class="table-responsive">
+                <table class="table table-hover table-bordered align-middle">
+                    <thead class="table-light"><tr><th>Date</th><th>Line</th><th>Model</th><th>Qty</th><th>Defect</th><th>Action</th></tr></thead>
+                    <tbody id="p2TableBody"></tbody>
+                </table>
             </div>
         </div>
-
-        <!-- Summary Cards -->
-        <div class="row mb-4 g-3">
-            <div class="col-md-3"><div class="summary-box bg-primary"><h6>Total TRC IN</h6><h3 id="dTotalIn">0</h3></div></div>
-            <div class="col-md-3"><div class="summary-box bg-danger"><h6>Pending Repair</h6><h3 id="dPending">0</h3></div></div>
-            <div class="col-md-3"><div class="summary-box bg-warning text-dark"><h6>Stock (Repaired)</h6><h3 id="dStock">0</h3></div></div>
-            <div class="col-md-3"><div class="summary-box bg-success"><h6>Total Dispatched</h6><h3 id="dOut">0</h3></div></div>
-        </div>
-
-        <!-- Detailed Table -->
-        <table id="dashTable" class="table table-striped table-bordered" style="width:100%">
-            <thead>
-                <tr>
-                    <th>Line</th>
-                    <th>Model</th>
-                    <th>Total In</th>
-                    <th>For Repair (Pending)</th>
-                    <th>Repaired Done</th>
-                    <th>TRC Out (Dispatched)</th>
-                    <th>Current Stock</th>
-                </tr>
-            </thead>
-            <tbody></tbody>
-        </table>
-      </div>
     </div>
-  </div>
 
-  <!-- TAB 6: COMPONENT REPORT -->
-  <div id="tab6" class="tab-content hidden">
-    <div class="card shadow-sm">
-        <div class="card-header bg-secondary text-white">6. Component Usage Report</div>
-        <div class="card-body">
-            <table id="compTable" class="table table-striped table-bordered" style="width:100%">
-                <thead>
-                    <tr>
-                        <th>Date</th>
-                        <th>Model</th>
-                        <th>Component Name</th>
-                        <th>Defect</th>
-                        <th>Repair Qty</th>
-                        <th>Engineer</th>
-                    </tr>
-                </thead>
+    <!-- TAB 3: TRC OUT -->
+    <div id="tab3" class="tab-content hidden">
+        <div class="card p-4 border-success">
+            <h5 class="text-success border-bottom pb-2">3. Ready for Dispatch (TRC OUT)</h5>
+            <div class="table-responsive">
+                <table class="table table-hover table-bordered align-middle">
+                    <thead class="table-light"><tr><th>Model</th><th>Repaired Qty</th><th>Engineer</th><th>Dispatch</th></tr></thead>
+                    <tbody id="p3TableBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 4: DASHBOARD -->
+    <div id="tab4" class="tab-content hidden">
+        <div class="card p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="text-info">4. Inventory Dashboard</h5>
+                <button class="btn btn-sm btn-outline-dark" onclick="loadDashboard()">🔄 Refresh</button>
+            </div>
+
+            <!-- Filters -->
+            <div class="row g-2 mb-4 align-items-end bg-light p-3 rounded">
+                <div class="col-md-3"><label>From Date</label><input type="date" id="dashFrom" class="form-control"></div>
+                <div class="col-md-3"><label>To Date</label><input type="date" id="dashTo" class="form-control"></div>
+                <div class="col-md-2"><button class="btn btn-dark w-100" onclick="renderDashboard()">Apply Filter</button></div>
+            </div>
+
+            <!-- Summary Cards -->
+            <div class="row mb-4 g-3">
+                <div class="col-md-3"><div class="summary-box bg-primary"><h6>Total TRC IN</h6><h2 id="dTotalIn" class="fw-bold">0</h2></div></div>
+                <div class="col-md-3"><div class="summary-box bg-danger"><h6>Pending Repair</h6><h2 id="dPending" class="fw-bold">0</h2></div></div>
+                <div class="col-md-3"><div class="summary-box bg-warning text-dark"><h6>Stock (Repaired)</h6><h2 id="dStock" class="fw-bold">0</h2></div></div>
+                <div class="col-md-3"><div class="summary-box bg-success"><h6>Dispatched</h6><h2 id="dOut" class="fw-bold">0</h2></div></div>
+            </div>
+
+            <table id="dashTable" class="table table-striped table-bordered w-100">
+                <thead><tr><th>Line</th><th>Model</th><th>Total In</th><th>Pending</th><th>Repaired</th><th>Dispatched</th><th>Stock</th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- TAB 6: COMPONENTS -->
+    <div id="tab6" class="tab-content hidden">
+        <div class="card p-4">
+            <h5 class="text-secondary border-bottom pb-2">6. Component Usage Report</h5>
+            <table id="compTable" class="table table-striped table-bordered w-100">
+                <thead><tr><th>Date</th><th>Model</th><th>Component</th><th>Defect</th><th>R.Qty</th><th>Engineer</th></tr></thead>
                 <tbody id="compBody"></tbody>
             </table>
         </div>
     </div>
-  </div>
 
-  <!-- TAB 7: OPENING ENTRY -->
-  <div id="tab7" class="tab-content hidden">
-    <div class="card shadow-sm border-danger">
-      <div class="card-header bg-danger text-white">Opening Entry (Last Month Stock)</div>
-      <div class="card-body">
-        <div class="alert alert-warning">Use this only for adding Opening Stock.</div>
-        <div class="row g-3">
-          <div class="col-md-3"><label>Date</label><input type="date" id="t7Date" class="form-control"></div>
-          <div class="col-md-3"><label>Line</label><input type="text" id="t7Line" class="form-control"></div>
-          <div class="col-md-3"><label>Model</label><input type="text" id="t7Model" class="form-control"></div>
-          <div class="col-md-3"><label>Opening Qty</label><input type="number" id="t7Qty" class="form-control"></div>
-          <div class="col-12"><button type="button" class="btn btn-danger" onclick="submitPhase1(true)">Add Opening Stock</button></div>
+    <!-- TAB 7: OPENING STOCK -->
+    <div id="tab7" class="tab-content hidden">
+        <div class="card p-4 border-danger">
+            <h5 class="text-danger">Opening Stock Entry</h5>
+            <div class="alert alert-warning py-1">Use this for last month's leftover stock.</div>
+            <div class="row g-3">
+                <div class="col-md-3"><label>Date</label><input type="date" id="t7Date" class="form-control"></div>
+                <div class="col-md-3"><label>Line</label><input type="text" id="t7Line" class="form-control"></div>
+                <div class="col-md-3"><label>Model</label><input type="text" id="t7Model" class="form-control"></div>
+                <div class="col-md-3"><label>Qty</label><input type="number" id="t7Qty" class="form-control"></div>
+            </div>
+            <button class="btn btn-danger mt-3 w-100" onclick="submitPhase1(true)">ADD OPENING STOCK</button>
         </div>
-      </div>
     </div>
-  </div>
 
 </div>
 
 <!-- REPAIR MODAL -->
 <div class="modal fade" id="repairModal" tabindex="-1">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header bg-warning">
-        <h5 class="modal-title">Repair Details</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body">
-        <input type="hidden" id="modalRowId">
-        <div class="mb-2"><label>Repair Qty</label><input type="number" id="modalRepQty" class="form-control"></div>
-        <div class="mb-2"><label>RCA</label><input type="text" id="modalRCA" class="form-control"></div>
-        <div class="mb-2">
-            <label>Action</label>
-            <select id="modalAction" class="form-select" onchange="toggleComp()">
-                <option value="Reflow">Reflow</option>
-                <option value="Change">Change Component</option>
-                <option value="Software">Software</option>
-            </select>
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title">Repair Process</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="modalRowId">
+                <div class="mb-2"><label>Repaired Qty</label><input type="number" id="modalRepQty" class="form-control"></div>
+                <div class="mb-2"><label>RCA</label><input type="text" id="modalRCA" class="form-control"></div>
+                <div class="mb-2"><label>Action</label>
+                    <select id="modalAction" class="form-select" onchange="toggleComp()">
+                        <option value="Reflow">Reflow</option>
+                        <option value="Change">Change Component</option>
+                        <option value="Software">Software</option>
+                    </select>
+                </div>
+                <div class="mb-2 hidden" id="compDiv">
+                    <label class="text-danger fw-bold">Component Name</label>
+                    <input type="text" id="modalComp" class="form-control border-danger">
+                </div>
+                <div class="mb-2"><label>Engineer Name</label><input type="text" id="modalEng" class="form-control"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" onclick="submitRepair()">Update Repair</button>
+            </div>
         </div>
-        <div class="mb-2 hidden" id="compDiv">
-            <label class="text-danger fw-bold">Component Name</label>
-            <input type="text" id="modalComp" class="form-control border-danger">
-        </div>
-        <div class="mb-2"><label>Engineer Name</label><input type="text" id="modalEng" class="form-control"></div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-primary" onclick="submitRepair()">Update Repair</button>
-      </div>
     </div>
-  </div>
 </div>
 
-<!-- JS Libraries -->
-<script src="https://code.jquery.com/jquery-3.5.1.js"></script>
+<!-- SCRIPTS -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
 
 <script>
-  // **********************************************
-  // PASTE YOUR DEPLOYED WEB APP URL HERE
-  // **********************************************
-  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxZCvcYvLOj0BAR7Y3epEc55AEuKYutxqNhuQG27dYQem0nt7sus8Wprnu_QwI3Ob2cTQ/exec"; 
+    // **********************************************
+    // PASTE YOUR NEW DEPLOYED WEB APP URL HERE
+    // **********************************************
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxDRnzpUGNH8cOj5l5wqa3SFpusCdzJaroQ2sEouUACseImDRxaE5lZm3d9mYefYHtP0w/exec"; 
 
-  function loading(show) { document.getElementById('loader').style.display = show ? 'block' : 'none'; }
-
-  function apiCall(mode, payload, callback) {
-    loading(true);
-    let url = SCRIPT_URL;
-    let options = { method: "POST" };
+    // --- UTILS ---
+    function loading(show) { document.getElementById('loader').style.display = show ? 'block' : 'none'; }
     
-    if (mode === "GET") {
-        url += "?action=" + payload.action + "&phase=" + (payload.phase || "");
-    } else {
-        options.body = JSON.stringify(payload);
-        options.headers = { "Content-Type": "text/plain" };
+    function showTab(id) {
+        $('.tab-content').addClass('hidden');
+        $('#' + id).removeClass('hidden');
+        $('.nav-link').removeClass('active');
+        $(event.target).addClass('active');
     }
 
-    fetch(url, options)
-    .then(res => res.json())
-    .then(data => {
-        loading(false);
-        callback(data);
-    })
-    .catch(err => {
-        loading(false);
-        alert("Error: " + err);
-        console.error(err);
-    });
-  }
+    function formatDate(d) { return d ? new Date(d).toLocaleDateString() : ""; }
 
-  function showTab(id) {
-    document.querySelectorAll('.tab-content').forEach(d => d.classList.add('hidden'));
-    document.getElementById(id).classList.remove('hidden');
-    document.querySelectorAll('.nav-link').forEach(b => b.classList.remove('active'));
-    event.target.classList.add('active');
-  }
-
-  // --- TAB 1 & 7: ENTRY ---
-  function submitPhase1(isOpening = false) {
-    let p = isOpening ? "t7" : "t1";
-    let data = {
-        date: document.getElementById(p+'Date').value,
-        time: isOpening ? "00:00" : document.getElementById(p+'Time').value,
-        line: document.getElementById(p+'Line').value,
-        model: document.getElementById(p+'Model').value,
-        qty: document.getElementById(p+'Qty').value,
-        defect: isOpening ? "OPENING STOCK" : document.getElementById(p+'Defect').value,
-        isOpening: isOpening ? "Yes" : "No"
-    };
-
-    if(!data.date || !data.qty) return alert("Fill mandatory fields");
-    
-    apiCall("POST", { action: "saveEntry", data: data }, (res) => {
-        alert(res.message);
-        if(!isOpening) document.getElementById('formPhase1').reset();
-    });
-  }
-
-  // --- TAB 2: REPAIR ---
-  function loadPhase2() {
-    showTab('tab2');
-    apiCall("GET", { action: "getData", phase: 2 }, (res) => {
-        let html = "";
-        res.forEach(item => {
-            // item.data: [ID, Date, Time, Line, Model, InQty, Defect, ...]
-            html += `<tr>
-                <td>${formatDate(item.data[1])}</td>
-                <td>${item.data[3]}</td>
-                <td>${item.data[4]}</td>
-                <td><span class="badge bg-secondary">${item.data[5]}</span></td>
-                <td>${item.data[6]}</td>
-                <td><button class="btn btn-sm btn-warning" onclick="openRepair(${item.row})">Repair</button></td>
-            </tr>`;
-        });
-        document.getElementById('p2TableBody').innerHTML = html || '<tr><td colspan="6" class="text-center">No Pending Repairs</td></tr>';
-    });
-  }
-
-  var modalObj;
-  function openRepair(row) {
-    document.getElementById('modalRowId').value = row;
-    modalObj = new bootstrap.Modal(document.getElementById('repairModal'));
-    modalObj.show();
-  }
-
-  function toggleComp() {
-    let val = document.getElementById('modalAction').value;
-    document.getElementById('compDiv').classList.toggle('hidden', val !== "Change");
-  }
-
-  function submitRepair() {
-    let data = {
-        rowId: document.getElementById('modalRowId').value,
-        repQty: document.getElementById('modalRepQty').value,
-        rca: document.getElementById('modalRCA').value,
-        action: document.getElementById('modalAction').value,
-        comp: document.getElementById('modalComp').value,
-        eng: document.getElementById('modalEng').value
-    };
-    apiCall("POST", { action: "updateRepair", data: data }, (res) => {
-        alert(res.message);
-        modalObj.hide();
-        loadPhase2();
-    });
-  }
-
-  // --- TAB 3: OUT ---
-  function loadPhase3() {
-    showTab('tab3');
-    apiCall("GET", { action: "getData", phase: 3 }, (res) => {
-        let html = "";
-        res.forEach(item => {
-            html += `<tr>
-                <td>${item.data[4]}</td>
-                <td><span class="badge bg-success">${item.data[7]}</span></td>
-                <td>${item.data[11]}</td>
-                <td>
-                    <div class="input-group input-group-sm">
-                        <input type="number" id="outQty_${item.row}" class="form-control" placeholder="Out Qty">
-                        <button class="btn btn-success" onclick="submitOut(${item.row})">Dispatch</button>
-                    </div>
-                </td>
-            </tr>`;
-        });
-        document.getElementById('p3TableBody').innerHTML = html;
-    });
-  }
-
-  function submitOut(row) {
-    let qty = document.getElementById('outQty_'+row).value;
-    if(!qty) return alert("Enter Qty");
-    
-    let now = new Date();
-    let data = {
-        rowId: row,
-        outQty: qty,
-        outDate: now.toISOString().split('T')[0],
-        outTime: now.toTimeString().slice(0,5)
-    };
-    apiCall("POST", { action: "updateOut", data: data }, (res) => {
-        alert(res.message);
-        loadPhase3();
-    });
-  }
-
-  // --- TAB 4 & 6: DASHBOARD LOGIC (THE BRAIN) ---
-  var allData = [];
-  
-  function loadDashboard() {
-    showTab('tab4');
-    // Fetch ALL data
-    apiCall("GET", { action: "getAllData" }, (data) => {
-        allData = data.slice(1); // Remove header
-        renderDashboard();
-    });
-  }
-  
-  function renderDashboard() {
-    let sDate = document.getElementById('filterStart').value;
-    let eDate = document.getElementById('filterEnd').value;
-    
-    // Convert to Date objects for comparison
-    let start = sDate ? new Date(sDate) : null;
-    let end = eDate ? new Date(eDate) : null;
-
-    let map = {};
-    let totalIn=0, totalPend=0, totalStock=0, totalOut=0;
-
-    allData.forEach(row => {
-        // Row Indexes: 1=Date, 3=Line, 4=Model, 5=InQty, 7=RepQty, 12=OutQty
-        let rDate = new Date(row[1]);
+    // --- API HANDLER (FIXED FOR GET/POST) ---
+    function apiCall(mode, payload, callback) {
+        loading(true);
+        let url = SCRIPT_URL;
         
-        // Date Filter Logic
-        if (start && rDate < start) return;
-        if (end && rDate > end) return;
+        // Dynamically Set Method (GET or POST)
+        let options = { method: mode };
 
-        let key = row[3] + "||" + row[4]; // Group by Line || Model
-        
-        if(!map[key]) map[key] = { line: row[3], model: row[4], in:0, rep:0, out:0 };
-        
-        let inQ = Number(row[5] || 0);
-        let repQ = Number(row[7] || 0);
-        let outQ = Number(row[12] || 0);
-
-        map[key].in += inQ;
-        map[key].rep += repQ;
-        map[key].out += outQ;
-    });
-
-    let tbody = "";
-    Object.values(map).forEach(o => {
-        let pending = o.in - o.rep; // Pending for Repair
-        let stock = o.rep - o.out;  // Repaired but not dispatched
-        
-        // Aggregates
-        totalIn += o.in;
-        totalPend += pending;
-        totalStock += stock;
-        totalOut += o.out;
-
-        tbody += `<tr>
-            <td>${o.line}</td>
-            <td>${o.model}</td>
-            <td class="fw-bold">${o.in}</td>
-            <td class="text-danger">${pending}</td>
-            <td class="text-primary">${o.rep}</td>
-            <td class="text-success">${o.out}</td>
-            <td class="bg-warning bg-opacity-25 fw-bold">${stock}</td>
-        </tr>`;
-    });
-
-    // Update Cards
-    document.getElementById('dTotalIn').innerText = totalIn;
-    document.getElementById('dPending').innerText = totalPend;
-    document.getElementById('dStock').innerText = totalStock;
-    document.getElementById('dOut').innerText = totalOut;
-
-    // Update Table (Re-init DataTables)
-    if ($.fn.DataTable.isDataTable('#dashTable')) $('#dashTable').DataTable().destroy();
-    document.querySelector('#dashTable tbody').innerHTML = tbody;
-    $('#dashTable').DataTable();
-  }
-
-  function loadComponentReport() {
-    showTab('tab6');
-    if(allData.length === 0) {
-        apiCall("GET", { action: "getAllData" }, (data) => {
-            allData = data.slice(1);
-            renderCompReport();
-        });
-    } else {
-        renderCompReport();
-    }
-  }
-
-  function renderCompReport() {
-    let tbody = "";
-    allData.forEach(row => {
-        // Filter: Where Component Name (Index 10) is not empty and not "NA"
-        let comp = row[10];
-        if (comp && comp !== "NA" && comp !== "") {
-            tbody += `<tr>
-                <td>${formatDate(row[1])}</td>
-                <td>${row[4]}</td>
-                <td class="text-danger fw-bold">${comp}</td>
-                <td>${row[6]}</td>
-                <td>${row[7]}</td>
-                <td>${row[11]}</td>
-            </tr>`;
+        if (mode === "GET") {
+            // GET: Append Data to URL
+            url += "?action=" + payload.action + "&phase=" + (payload.phase || "");
+        } else {
+            // POST: Send Data in Body
+            options.body = JSON.stringify(payload);
+            options.headers = { "Content-Type": "text/plain" };
         }
-    });
 
-    if ($.fn.DataTable.isDataTable('#compTable')) $('#compTable').DataTable().destroy();
-    document.getElementById('compBody').innerHTML = tbody;
-    $('#compTable').DataTable();
-  }
+        fetch(url, options)
+        .then(res => res.text()) // Convert to text first to debug errors
+        .then(text => {
+            loading(false);
+            try {
+                let data = JSON.parse(text);
+                if(data.status === "error") {
+                    alert("Server Error: " + data.message);
+                } else {
+                    callback(data);
+                }
+            } catch (e) {
+                console.error("Raw Response:", text);
+                alert("Data Error! Check Console for details.");
+            }
+        })
+        .catch(err => {
+            loading(false);
+            alert("Network Error: " + err);
+        });
+    }
 
-  function formatDate(isoString) {
-    if (!isoString) return "";
-    let d = new Date(isoString);
-    return d.toLocaleDateString();
-  }
+    // --- LOGIC FUNCTIONS ---
+
+    // 1. Submit Data (IN or OPENING)
+    function submitPhase1(isOpening = false) {
+        let p = isOpening ? "t7" : "t1";
+        let data = {
+            date: $('#'+p+'Date').val(),
+            time: isOpening ? "00:00" : $('#'+p+'Time').val(),
+            line: $('#'+p+'Line').val(),
+            model: $('#'+p+'Model').val(),
+            qty: $('#'+p+'Qty').val(),
+            defect: isOpening ? "OPENING STOCK" : $('#'+p+'Defect').val(),
+            isOpening: isOpening ? "Yes" : "No"
+        };
+        if(!data.date || !data.qty) return alert("Please fill mandatory fields");
+
+        apiCall("POST", { action: "saveEntry", data: data }, (res) => {
+            alert(res.message);
+            if(!isOpening) document.getElementById('formPhase1').reset();
+        });
+    }
+
+    // 2. Load Repair Data
+    function loadPhase2() {
+        showTab('tab2');
+        apiCall("GET", { action: "getData", phase: 2 }, (res) => {
+            let html = "";
+            res.forEach(item => {
+                html += `<tr>
+                    <td>${formatDate(item.data[1])}</td>
+                    <td>${item.data[3]}</td>
+                    <td>${item.data[4]}</td>
+                    <td><span class="badge bg-secondary">${item.data[5]}</span></td>
+                    <td>${item.data[6]}</td>
+                    <td><button class="btn btn-sm btn-warning" onclick="openRepair(${item.row})">Repair</button></td>
+                </tr>`;
+            });
+            $('#p2TableBody').html(html || '<tr><td colspan="6" class="text-center">No Pending Repairs</td></tr>');
+        });
+    }
+
+    // Repair Modal
+    var modalObj;
+    function openRepair(row) {
+        $('#modalRowId').val(row);
+        modalObj = new bootstrap.Modal(document.getElementById('repairModal'));
+        modalObj.show();
+    }
+    function toggleComp() {
+        let val = $('#modalAction').val();
+        if(val === "Change") $('#compDiv').removeClass('hidden');
+        else $('#compDiv').addClass('hidden');
+    }
+    function submitRepair() {
+        let data = {
+            rowId: $('#modalRowId').val(),
+            repQty: $('#modalRepQty').val(),
+            rca: $('#modalRCA').val(),
+            action: $('#modalAction').val(),
+            comp: $('#modalComp').val(),
+            eng: $('#modalEng').val()
+        };
+        apiCall("POST", { action: "updateRepair", data: data }, (res) => {
+            alert(res.message);
+            modalObj.hide();
+            loadPhase2();
+        });
+    }
+
+    // 3. Load OUT Data
+    function loadPhase3() {
+        showTab('tab3');
+        apiCall("GET", { action: "getData", phase: 3 }, (res) => {
+            let html = "";
+            res.forEach(item => {
+                html += `<tr>
+                    <td>${item.data[4]}</td>
+                    <td><span class="badge bg-primary">${item.data[7]}</span></td>
+                    <td>${item.data[11]}</td>
+                    <td>
+                        <div class="input-group input-group-sm">
+                            <input type="number" id="outQty_${item.row}" class="form-control" placeholder="Out Qty">
+                            <button class="btn btn-success" onclick="submitOut(${item.row})">Dispatch</button>
+                        </div>
+                    </td>
+                </tr>`;
+            });
+            $('#p3TableBody').html(html || '<tr><td colspan="4" class="text-center">No Items Ready</td></tr>');
+        });
+    }
+
+    function submitOut(row) {
+        let qty = $('#outQty_'+row).val();
+        if(!qty) return alert("Enter Qty");
+        
+        let now = new Date();
+        let data = {
+            rowId: row,
+            outQty: qty,
+            outDate: now.toISOString().split('T')[0],
+            outTime: now.toTimeString().slice(0,5)
+        };
+        apiCall("POST", { action: "updateOut", data: data }, (res) => {
+            alert(res.message);
+            loadPhase3();
+        });
+    }
+
+    // 4. Dashboard
+    var globalData = [];
+    function loadDashboard() {
+        showTab('tab4');
+        apiCall("GET", { action: "getAllData" }, (data) => {
+            if(data.length > 0) globalData = data.slice(1);
+            renderDashboard();
+        });
+    }
+
+    function renderDashboard() {
+        let from = $('#dashFrom').val() ? new Date($('#dashFrom').val()) : null;
+        let to = $('#dashTo').val() ? new Date($('#dashTo').val()) : null;
+
+        let map = {};
+        let tIn=0, tPend=0, tStock=0, tOut=0;
+
+        globalData.forEach(row => {
+            // Check Date
+            let d = new Date(row[1]);
+            if(from && d < from) return;
+            if(to && d > to) return;
+
+            // Key = Line + Model
+            let key = row[3] + "||" + row[4];
+            if(!map[key]) map[key] = { line: row[3], model: row[4], in:0, rep:0, out:0 };
+
+            map[key].in += Number(row[5]||0);
+            map[key].rep += Number(row[7]||0);
+            map[key].out += Number(row[12]||0);
+        });
+
+        let tbody = "";
+        Object.values(map).forEach(o => {
+            let pending = o.in - o.rep;
+            let stock = o.rep - o.out;
+            
+            tIn += o.in; tPend += pending; tStock += stock; tOut += o.out;
+
+            tbody += `<tr>
+                <td>${o.line}</td><td>${o.model}</td>
+                <td class="fw-bold">${o.in}</td>
+                <td class="text-danger">${pending}</td>
+                <td class="text-primary">${o.rep}</td>
+                <td class="text-success">${o.out}</td>
+                <td class="bg-warning bg-opacity-25 fw-bold">${stock}</td>
+            </tr>`;
+        });
+
+        $('#dTotalIn').text(tIn); $('#dPending').text(tPend);
+        $('#dStock').text(tStock); $('#dOut').text(tOut);
+
+        if ($.fn.DataTable.isDataTable('#dashTable')) $('#dashTable').DataTable().destroy();
+        $('#dashTable tbody').html(tbody);
+        $('#dashTable').DataTable();
+    }
+
+    // 6. Component Report
+    function loadCompReport() {
+        showTab('tab6');
+        if(globalData.length === 0) { loadDashboard(); return; }
+        
+        let tbody = "";
+        globalData.forEach(row => {
+            let comp = row[10]; // K = Index 10
+            if(comp && comp !== "NA" && comp !== "") {
+                tbody += `<tr>
+                    <td>${formatDate(row[1])}</td>
+                    <td>${row[4]}</td>
+                    <td class="text-danger fw-bold">${comp}</td>
+                    <td>${row[6]}</td>
+                    <td>${row[7]}</td>
+                    <td>${row[11]}</td>
+                </tr>`;
+            }
+        });
+
+        if ($.fn.DataTable.isDataTable('#compTable')) $('#compTable').DataTable().destroy();
+        $('#compBody').html(tbody);
+        $('#compTable').DataTable();
+    }
+
 </script>
-
 </body>
 </html>
