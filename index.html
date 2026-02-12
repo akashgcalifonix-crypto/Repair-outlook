@@ -1,441 +1,363 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TRC System 506</title>
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- DataTables CSS -->
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css">
+  <meta charset="UTF-8">
+  <title>TRC In/Out Report</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body { background-color: #f4f6f9; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
     
-    <style>
-        body { background-color: #f0f2f5; font-family: 'Segoe UI', sans-serif; }
-        .nav-tabs .nav-link.active { background-color: #0d6efd; color: white; border-color: #0d6efd; }
-        .nav-tabs .nav-link { color: #495057; font-weight: 600; cursor: pointer; }
-        .hidden { display: none !important; }
-        .card { border-radius: 10px; border: none; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-top: 20px; }
-        .loader { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.85); z-index: 9999; }
-        .spinner-box { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; }
-        .summary-box { padding: 20px; border-radius: 12px; color: white; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-    </style>
+    /* Login Styles */
+    .login-container { max-width: 400px; margin: 80px auto; padding: 30px; background: white; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+    
+    /* Main App Styles */
+    .main-container { display: none; max-width: 100%; margin: 20px; background: white; padding: 20px; box-shadow: 0 0 15px rgba(0,0,0,0.1); border-radius: 8px; }
+    
+    /* Table Grid */
+    .table-container { overflow-x: auto; }
+    .report-table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 1200px; }
+    .report-table th, .report-table td { border: 1px solid #ccc; padding: 0; text-align: center; height: 30px; }
+    .report-table th { background-color: #f1f3f5; font-weight: 600; padding: 5px; }
+    
+    /* Defect Column (Fixed Width) */
+    .defect-col { text-align: left !important; width: 180px; min-width: 180px; padding-left: 8px !important; font-weight: 500; background-color: #fff; position: sticky; left: 0; z-index: 10; border-right: 2px solid #ddd; }
+    
+    /* Inputs */
+    .grid-input { width: 100%; height: 100%; border: none; text-align: center; outline: none; background: transparent; }
+    .grid-input:focus { background-color: #e8f0fe; font-weight: bold; }
+    .grid-input:hover { background-color: #f8f9fa; }
+    
+    /* Totals */
+    .total-cell { background-color: #e9ecef; font-weight: bold; color: #333; }
+    
+    /* Loader */
+    .loader { display: none; width: 20px; height: 20px; border: 3px solid #f3f3f3; border-top: 3px solid #0d6efd; border-radius: 50%; animation: spin 1s linear infinite; vertical-align: middle; margin-left: 10px; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+  </style>
 </head>
 <body>
 
-<!-- Loader -->
-<div id="loader" class="loader">
-    <div class="spinner-box">
-        <div class="spinner-border text-primary" role="status"></div>
-        <div class="mt-2 fw-bold text-dark">Processing Request...</div>
+  <!-- LOGIN SCREEN -->
+  <div id="loginScreen" class="login-container">
+    <div class="text-center mb-4">
+       <!-- Replace with your logo URL -->
+       <img src="https://via.placeholder.com/150x50?text=Company+Logo" alt="Logo" style="height:50px;">
+       <h4 class="mt-3">TRC Login</h4>
     </div>
-</div>
-
-<!-- Header -->
-<nav class="navbar navbar-dark bg-dark mb-4 shadow">
-    <div class="container-fluid">
-        <span class="navbar-brand mb-0 h1">🛠️ TRC Tracking System (506 Dashboard)</span>
+    <div class="mb-3">
+      <label class="form-label">Line Username</label>
+      <input type="text" id="username" class="form-control" placeholder="e.g. Line01">
     </div>
-</nav>
+    <div class="mb-3">
+      <label class="form-label">Password</label>
+      <input type="password" id="password" class="form-control" placeholder="Password">
+    </div>
+    <button onclick="attemptLogin()" id="loginBtn" class="btn btn-primary w-100">
+      Login <div id="loginLoader" class="loader"></div>
+    </button>
+    <p id="loginMsg" class="text-danger mt-3 text-center small"></p>
+  </div>
 
-<div class="container-fluid px-4">
-
-    <!-- Navigation Tabs -->
-    <ul class="nav nav-tabs" id="mainTab">
-        <li class="nav-item"><button class="nav-link active" onclick="showTab('tab1')">📥 TRC IN</button></li>
-        <li class="nav-item"><button class="nav-link" onclick="loadPhase2()">🔧 Repair Entry</button></li>
-        <li class="nav-item"><button class="nav-link" onclick="loadPhase3()">📤 TRC OUT</button></li>
-        <li class="nav-item"><button class="nav-link" onclick="loadDashboard()">📊 Dashboard</button></li>
-        <li class="nav-item"><button class="nav-link" onclick="loadCompReport()">🧩 Components</button></li>
-        <li class="nav-item ms-auto"><button class="nav-link btn btn-outline-danger text-danger border-danger" onclick="showTab('tab7')">📅 Opening Stock</button></li>
-    </ul>
-
-    <!-- TAB 1: TRC IN -->
-    <div id="tab1" class="tab-content">
-        <div class="card p-4">
-            <h5 class="text-primary border-bottom pb-2">1. New TRC Entry</h5>
-            <form id="formPhase1">
-                <div class="row g-3">
-                    <div class="col-md-2"><label>Date</label><input type="date" id="t1Date" class="form-control"></div>
-                    <div class="col-md-2"><label>Time</label><input type="time" id="t1Time" class="form-control"></div>
-                    <div class="col-md-2"><label>Line No</label><input type="text" id="t1Line" class="form-control" placeholder="e.g. L1"></div>
-                    <div class="col-md-2"><label>Model</label><input type="text" id="t1Model" class="form-control" placeholder="e.g. 131"></div>
-                    <div class="col-md-2"><label>In Qty</label><input type="number" id="t1Qty" class="form-control" placeholder="0"></div>
-                    <div class="col-md-2"><label>Defect</label><input type="text" id="t1Defect" class="form-control" placeholder="Issue"></div>
-                </div>
-                <button type="button" class="btn btn-primary mt-4 w-100 fw-bold" onclick="submitPhase1()">SAVE ENTRY</button>
-            </form>
-        </div>
+  <!-- MAIN APP SCREEN -->
+  <div id="appScreen" class="main-container">
+    <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-2">
+      <img src="https://via.placeholder.com/150x50?text=Company+Logo" alt="Logo" style="height:40px;">
+      <h3 class="m-0">TRC In/Out Report</h3>
+      <button onclick="logout()" class="btn btn-outline-danger btn-sm">Logout</button>
     </div>
 
-    <!-- TAB 2: REPAIR -->
-    <div id="tab2" class="tab-content hidden">
-        <div class="card p-4 border-warning">
-            <h5 class="text-warning border-bottom pb-2">2. Pending For Repair</h5>
-            <div class="table-responsive">
-                <table class="table table-hover table-bordered align-middle">
-                    <thead class="table-light"><tr><th>Date</th><th>Line</th><th>Model</th><th>Qty</th><th>Defect</th><th>Action</th></tr></thead>
-                    <tbody id="p2TableBody"></tbody>
-                </table>
-            </div>
-        </div>
+    <!-- Controls -->
+    <div class="row g-2 mb-3 align-items-end" style="background: #f8f9fa; padding: 10px; border-radius: 6px;">
+      <div class="col-md-2 col-6"><label class="small fw-bold">Date</label><input type="date" id="reportDate" class="form-control form-control-sm"></div>
+      <div class="col-md-2 col-6"><label class="small fw-bold">Line No</label><input type="text" id="lineNo" class="form-control form-control-sm" readonly style="background-color: #e9ecef;"></div>
+      <div class="col-md-2 col-6"><label class="small fw-bold">Model</label><input type="text" id="modelName" class="form-control form-control-sm" placeholder="AD 131"></div>
+      <div class="col-md-1 col-6"><label class="small fw-bold">Shift</label><select id="shiftId" class="form-select form-select-sm"><option value="A">A</option><option value="B">B</option><option value="C">C</option></select></div>
+      <div class="col-md-2 col-6"><label class="small fw-bold">Type</label><select id="typeId" class="form-select form-select-sm"><option value="Online">Online</option><option value="Offline">Offline</option></select></div>
+      <div class="col-md-3 text-end">
+         <button onclick="loadData()" id="loadBtn" class="btn btn-info btn-sm text-white w-100 fw-bold">
+           Load Existing Data <div id="loadLoader" class="loader"></div>
+         </button>
+      </div>
     </div>
 
-    <!-- TAB 3: TRC OUT -->
-    <div id="tab3" class="tab-content hidden">
-        <div class="card p-4 border-success">
-            <h5 class="text-success border-bottom pb-2">3. Ready for Dispatch (TRC OUT)</h5>
-            <div class="table-responsive">
-                <table class="table table-hover table-bordered align-middle">
-                    <thead class="table-light"><tr><th>Model</th><th>Repaired Qty</th><th>Engineer</th><th>Dispatch</th></tr></thead>
-                    <tbody id="p3TableBody"></tbody>
-                </table>
-            </div>
-        </div>
+    <!-- Data Grid -->
+    <div class="table-container">
+      <table class="report-table" id="mainTable">
+        <thead>
+          <tr id="timeHeader1"><th rowspan="2" style="width:180px; z-index:11" class="defect-col">Defect / Time</th></tr>
+          <tr id="timeHeader2"></tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+        <tfoot>
+           <tr id="footerRow"><td class="defect-col total-cell">G.Total</td></tr>
+        </tfoot>
+      </table>
     </div>
 
-    <!-- TAB 4: DASHBOARD -->
-    <div id="tab4" class="tab-content hidden">
-        <div class="card p-4">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <h5 class="text-info">4. Inventory Dashboard</h5>
-                <button class="btn btn-sm btn-outline-dark" onclick="loadDashboard()">🔄 Refresh</button>
-            </div>
-
-            <!-- Filters -->
-            <div class="row g-2 mb-4 align-items-end bg-light p-3 rounded">
-                <div class="col-md-3"><label>From Date</label><input type="date" id="dashFrom" class="form-control"></div>
-                <div class="col-md-3"><label>To Date</label><input type="date" id="dashTo" class="form-control"></div>
-                <div class="col-md-2"><button class="btn btn-dark w-100" onclick="renderDashboard()">Apply Filter</button></div>
-            </div>
-
-            <!-- Summary Cards -->
-            <div class="row mb-4 g-3">
-                <div class="col-md-3"><div class="summary-box bg-primary"><h6>Total TRC IN</h6><h2 id="dTotalIn" class="fw-bold">0</h2></div></div>
-                <div class="col-md-3"><div class="summary-box bg-danger"><h6>Pending Repair</h6><h2 id="dPending" class="fw-bold">0</h2></div></div>
-                <div class="col-md-3"><div class="summary-box bg-warning text-dark"><h6>Stock (Repaired)</h6><h2 id="dStock" class="fw-bold">0</h2></div></div>
-                <div class="col-md-3"><div class="summary-box bg-success"><h6>Dispatched</h6><h2 id="dOut" class="fw-bold">0</h2></div></div>
-            </div>
-
-            <table id="dashTable" class="table table-striped table-bordered w-100">
-                <thead><tr><th>Line</th><th>Model</th><th>Total In</th><th>Pending</th><th>Repaired</th><th>Dispatched</th><th>Stock</th></tr></thead>
-                <tbody></tbody>
-            </table>
-        </div>
+    <!-- Actions -->
+    <div class="mt-4 text-center">
+      <button onclick="saveData()" id="saveBtn" class="btn btn-success px-5 fw-bold">
+        Save Data <div id="saveLoader" class="loader"></div>
+      </button>
+      <button onclick="window.print()" class="btn btn-secondary px-4 ms-2">Preview / Print</button>
     </div>
+  </div>
 
-    <!-- TAB 6: COMPONENTS -->
-    <div id="tab6" class="tab-content hidden">
-        <div class="card p-4">
-            <h5 class="text-secondary border-bottom pb-2">6. Component Usage Report</h5>
-            <table id="compTable" class="table table-striped table-bordered w-100">
-                <thead><tr><th>Date</th><th>Model</th><th>Component</th><th>Defect</th><th>R.Qty</th><th>Engineer</th></tr></thead>
-                <tbody id="compBody"></tbody>
-            </table>
-        </div>
-    </div>
+  <script>
+    // ******************************************************************
+    // ⚠️ PASTE YOUR GOOGLE DEPLOYMENT URL INSIDE THE QUOTES BELOW
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxME3GRRZe0e2_YPfcFOemUK-maPVLrwgfY4mPzM654h3bvUXl9MO3Q5EPvs3kBuPFx/exec"; 
+    // ******************************************************************
 
-    <!-- TAB 7: OPENING STOCK -->
-    <div id="tab7" class="tab-content hidden">
-        <div class="card p-4 border-danger">
-            <h5 class="text-danger">Opening Stock Entry</h5>
-            <div class="alert alert-warning py-1">Use this for last month's leftover stock.</div>
-            <div class="row g-3">
-                <div class="col-md-3"><label>Date</label><input type="date" id="t7Date" class="form-control"></div>
-                <div class="col-md-3"><label>Line</label><input type="text" id="t7Line" class="form-control"></div>
-                <div class="col-md-3"><label>Model</label><input type="text" id="t7Model" class="form-control"></div>
-                <div class="col-md-3"><label>Qty</label><input type="number" id="t7Qty" class="form-control"></div>
-            </div>
-            <button class="btn btn-danger mt-3 w-100" onclick="submitPhase1(true)">ADD OPENING STOCK</button>
-        </div>
-    </div>
+    const timeSlots = [
+      { start: "08:30", end: "09:30" }, { start: "09:30", end: "10:30" }, { start: "10:30", end: "11:30" },
+      { start: "11:30", end: "12:30" }, { start: "12:30", end: "01:30" }, { start: "01:30", end: "02:30" },
+      { start: "02:30", end: "03:30" }, { start: "03:30", end: "04:30" }, { start: "04:30", end: "05:30" },
+      { start: "05:30", end: "06:30" }, { start: "06:30", end: "07:30" }
+    ];
 
-</div>
+    const defects = [
+      "Not On", "Speaker Fail", "Mic Fail", "Channel Detection", "Hard Glue", "RF Fail", "Sensor Fail", 
+      "Cavity Crack", "LED Issue", "Dent,Scratch", "Pogo Pin Issue", "Buds Heating", "Dut Mode", 
+      "BT not connect", "Distortion", "Body Sensor", "Not Pairing", "Inquiry Fail", "Electric Sound", 
+      "Polarity Reverse", "Low Current", "Battery Drain", "Gap", "High Current", "Hall Sensor", 
+      "Key Issue", "Low Sound", "Magnet Issue", "Component Damage", "Unpair", "ANC Fail", 
+      "Software PCBA/Model Mixing", "Buds Not Disconnect", "Scrap"
+    ];
 
-<!-- REPAIR MODAL -->
-<div class="modal fade" id="repairModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header bg-warning">
-                <h5 class="modal-title">Repair Process</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <input type="hidden" id="modalRowId">
-                <div class="mb-2"><label>Repaired Qty</label><input type="number" id="modalRepQty" class="form-control"></div>
-                <div class="mb-2"><label>RCA</label><input type="text" id="modalRCA" class="form-control"></div>
-                <div class="mb-2"><label>Action</label>
-                    <select id="modalAction" class="form-select" onchange="toggleComp()">
-                        <option value="Reflow">Reflow</option>
-                        <option value="Change">Change Component</option>
-                        <option value="Software">Software</option>
-                    </select>
-                </div>
-                <div class="mb-2 hidden" id="compDiv">
-                    <label class="text-danger fw-bold">Component Name</label>
-                    <input type="text" id="modalComp" class="form-control border-danger">
-                </div>
-                <div class="mb-2"><label>Engineer Name</label><input type="text" id="modalEng" class="form-control"></div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-primary" onclick="submitRepair()">Update Repair</button>
-            </div>
-        </div>
-    </div>
-</div>
+    window.onload = function() {
+      document.getElementById('reportDate').valueAsDate = new Date();
+      generateTable();
+    };
 
-<!-- SCRIPTS -->
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
+    function generateTable() {
+      const h1 = document.getElementById('timeHeader1');
+      const h2 = document.getElementById('timeHeader2');
+      const tbody = document.getElementById('tableBody');
+      const tfoot = document.getElementById('footerRow');
 
-<script>
-    // **********************************************
-    // PASTE YOUR NEW DEPLOYED WEB APP URL HERE
-    // **********************************************
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxDRnzpUGNH8cOj5l5wqa3SFpusCdzJaroQ2sEouUACseImDRxaE5lZm3d9mYefYHtP0w/exec"; 
+      // Headers
+      timeSlots.forEach(slot => {
+        let th1 = document.createElement('th'); th1.innerText = slot.start; h1.appendChild(th1);
+        let th2 = document.createElement('th'); th2.innerText = slot.end; h2.appendChild(th2);
+      });
+      h1.appendChild(document.createElement('th')).innerText = "G.Total";
+      h2.appendChild(document.createElement('th'));
 
-    // --- UTILS ---
-    function loading(show) { document.getElementById('loader').style.display = show ? 'block' : 'none'; }
-    
-    function showTab(id) {
-        $('.tab-content').addClass('hidden');
-        $('#' + id).removeClass('hidden');
-        $('.nav-link').removeClass('active');
-        $(event.target).addClass('active');
+      // Body
+      defects.forEach((defect, rIndex) => {
+        let tr = document.createElement('tr');
+        
+        // Defect Name
+        let tdName = document.createElement('td'); 
+        tdName.className = 'defect-col'; 
+        tdName.innerText = defect; 
+        tr.appendChild(tdName);
+
+        // Inputs
+        timeSlots.forEach((_, cIndex) => {
+          let td = document.createElement('td');
+          let input = document.createElement('input');
+          input.type = "number"; 
+          input.className = "grid-input"; 
+          input.id = `cell-${rIndex}-${cIndex}`;
+          // Optimize performance: only calculate on 'change' (lost focus), not every keypress
+          input.onchange = calculateTotals; 
+          td.appendChild(input); 
+          tr.appendChild(td);
+        });
+
+        // Row Total
+        let tdTotal = document.createElement('td'); 
+        tdTotal.className = 'total-cell'; 
+        tdTotal.id = `row-total-${rIndex}`; 
+        tdTotal.innerText = "0";
+        tr.appendChild(tdTotal);
+        
+        tbody.appendChild(tr);
+      });
+
+      // Footer
+      timeSlots.forEach((_, cIndex) => {
+        let td = document.createElement('td'); 
+        td.className = 'total-cell'; 
+        td.id = `col-total-${cIndex}`; 
+        td.innerText = "0";
+        tfoot.appendChild(td);
+      });
+      let tdFinal = document.createElement('td'); 
+      tdFinal.className = 'total-cell'; 
+      tdFinal.id = 'grand-total-all'; 
+      tdFinal.innerText = "0";
+      tfoot.appendChild(tdFinal);
     }
 
-    function formatDate(d) { return d ? new Date(d).toLocaleDateString() : ""; }
+    function calculateTotals() {
+      let grandTotalAll = 0;
+      
+      // Row Totals
+      defects.forEach((_, rIndex) => {
+        let rowSum = 0;
+        timeSlots.forEach((_, cIndex) => {
+          let val = document.getElementById(`cell-${rIndex}-${cIndex}`).value;
+          rowSum += (val === "" ? 0 : parseFloat(val));
+        });
+        document.getElementById(`row-total-${rIndex}`).innerText = rowSum;
+        grandTotalAll += rowSum;
+      });
 
-    // --- API HANDLER (FIXED FOR GET/POST) ---
-    function apiCall(mode, payload, callback) {
-        loading(true);
-        let url = SCRIPT_URL;
-        
-        // Dynamically Set Method (GET or POST)
-        let options = { method: mode };
+      // Column Totals
+      timeSlots.forEach((_, cIndex) => {
+        let colSum = 0;
+        defects.forEach((_, rIndex) => {
+          let val = document.getElementById(`cell-${rIndex}-${cIndex}`).value;
+          colSum += (val === "" ? 0 : parseFloat(val));
+        });
+        document.getElementById(`col-total-${cIndex}`).innerText = colSum;
+      });
 
-        if (mode === "GET") {
-            // GET: Append Data to URL
-            url += "?action=" + payload.action + "&phase=" + (payload.phase || "");
+      document.getElementById('grand-total-all').innerText = grandTotalAll;
+    }
+
+    // --- API FUNCTIONS ---
+
+    function toggleLoader(id, show) {
+      const loader = document.getElementById(id);
+      if(loader) loader.style.display = show ? 'inline-block' : 'none';
+    }
+
+    async function attemptLogin() {
+      const u = document.getElementById('username').value.trim();
+      const p = document.getElementById('password').value.trim();
+      const msg = document.getElementById('loginMsg');
+      const btn = document.getElementById('loginBtn');
+      
+      if(!u || !p) { msg.innerText = "Please enter both fields"; return; }
+
+      msg.innerText = "";
+      btn.disabled = true;
+      toggleLoader('loginLoader', true);
+
+      try {
+        const url = `${SCRIPT_URL}?action=login&user=${encodeURIComponent(u)}&pass=${encodeURIComponent(p)}`;
+        const response = await fetch(url);
+        const data = await response.json();
+
+        if (data.status === 'success') {
+           document.getElementById('loginScreen').style.display = 'none';
+           document.getElementById('appScreen').style.display = 'block';
+           document.getElementById('lineNo').value = data.username;
         } else {
-            // POST: Send Data in Body
-            options.body = JSON.stringify(payload);
-            options.headers = { "Content-Type": "text/plain" };
+           msg.innerText = data.message || "Invalid Login";
         }
+      } catch (e) {
+        msg.innerText = "Connection Failed. Ensure the script is deployed as 'Anyone'.";
+        console.error(e);
+      }
+      
+      btn.disabled = false;
+      toggleLoader('loginLoader', false);
+    }
 
-        fetch(url, options)
-        .then(res => res.text()) // Convert to text first to debug errors
-        .then(text => {
-            loading(false);
-            try {
-                let data = JSON.parse(text);
-                if(data.status === "error") {
-                    alert("Server Error: " + data.message);
-                } else {
-                    callback(data);
-                }
-            } catch (e) {
-                console.error("Raw Response:", text);
-                alert("Data Error! Check Console for details.");
-            }
-        })
-        .catch(err => {
-            loading(false);
-            alert("Network Error: " + err);
+    async function saveData() {
+      const d = document.getElementById('reportDate').value;
+      const m = document.getElementById('modelName').value.trim();
+      
+      if(!d || !m) { alert("Please select Date and enter Model Name."); return; }
+
+      const btn = document.getElementById('saveBtn');
+      btn.disabled = true;
+      toggleLoader('saveLoader', true);
+
+      // Collect Data
+      let gridData = [];
+      defects.forEach((_, rIndex) => {
+        let rowData = [];
+        timeSlots.forEach((_, cIndex) => {
+          let val = document.getElementById(`cell-${rIndex}-${cIndex}`).value;
+          rowData.push(val === "" ? 0 : val);
         });
-    }
+        gridData.push(rowData);
+      });
 
-    // --- LOGIC FUNCTIONS ---
+      const payload = {
+        date: d,
+        line: document.getElementById('lineNo').value,
+        model: m,
+        shift: document.getElementById('shiftId').value,
+        gridData: gridData
+      };
 
-    // 1. Submit Data (IN or OPENING)
-    function submitPhase1(isOpening = false) {
-        let p = isOpening ? "t7" : "t1";
-        let data = {
-            date: $('#'+p+'Date').val(),
-            time: isOpening ? "00:00" : $('#'+p+'Time').val(),
-            line: $('#'+p+'Line').val(),
-            model: $('#'+p+'Model').val(),
-            qty: $('#'+p+'Qty').val(),
-            defect: isOpening ? "OPENING STOCK" : $('#'+p+'Defect').val(),
-            isOpening: isOpening ? "Yes" : "No"
-        };
-        if(!data.date || !data.qty) return alert("Please fill mandatory fields");
-
-        apiCall("POST", { action: "saveEntry", data: data }, (res) => {
-            alert(res.message);
-            if(!isOpening) document.getElementById('formPhase1').reset();
+      try {
+        // Send via POST text/plain to avoid CORS preflight issues
+        const response = await fetch(SCRIPT_URL, {
+          method: 'POST',
+          body: JSON.stringify(payload)
         });
-    }
-
-    // 2. Load Repair Data
-    function loadPhase2() {
-        showTab('tab2');
-        apiCall("GET", { action: "getData", phase: 2 }, (res) => {
-            let html = "";
-            res.forEach(item => {
-                html += `<tr>
-                    <td>${formatDate(item.data[1])}</td>
-                    <td>${item.data[3]}</td>
-                    <td>${item.data[4]}</td>
-                    <td><span class="badge bg-secondary">${item.data[5]}</span></td>
-                    <td>${item.data[6]}</td>
-                    <td><button class="btn btn-sm btn-warning" onclick="openRepair(${item.row})">Repair</button></td>
-                </tr>`;
-            });
-            $('#p2TableBody').html(html || '<tr><td colspan="6" class="text-center">No Pending Repairs</td></tr>');
-        });
-    }
-
-    // Repair Modal
-    var modalObj;
-    function openRepair(row) {
-        $('#modalRowId').val(row);
-        modalObj = new bootstrap.Modal(document.getElementById('repairModal'));
-        modalObj.show();
-    }
-    function toggleComp() {
-        let val = $('#modalAction').val();
-        if(val === "Change") $('#compDiv').removeClass('hidden');
-        else $('#compDiv').addClass('hidden');
-    }
-    function submitRepair() {
-        let data = {
-            rowId: $('#modalRowId').val(),
-            repQty: $('#modalRepQty').val(),
-            rca: $('#modalRCA').val(),
-            action: $('#modalAction').val(),
-            comp: $('#modalComp').val(),
-            eng: $('#modalEng').val()
-        };
-        apiCall("POST", { action: "updateRepair", data: data }, (res) => {
-            alert(res.message);
-            modalObj.hide();
-            loadPhase2();
-        });
-    }
-
-    // 3. Load OUT Data
-    function loadPhase3() {
-        showTab('tab3');
-        apiCall("GET", { action: "getData", phase: 3 }, (res) => {
-            let html = "";
-            res.forEach(item => {
-                html += `<tr>
-                    <td>${item.data[4]}</td>
-                    <td><span class="badge bg-primary">${item.data[7]}</span></td>
-                    <td>${item.data[11]}</td>
-                    <td>
-                        <div class="input-group input-group-sm">
-                            <input type="number" id="outQty_${item.row}" class="form-control" placeholder="Out Qty">
-                            <button class="btn btn-success" onclick="submitOut(${item.row})">Dispatch</button>
-                        </div>
-                    </td>
-                </tr>`;
-            });
-            $('#p3TableBody').html(html || '<tr><td colspan="4" class="text-center">No Items Ready</td></tr>');
-        });
-    }
-
-    function submitOut(row) {
-        let qty = $('#outQty_'+row).val();
-        if(!qty) return alert("Enter Qty");
         
-        let now = new Date();
-        let data = {
-            rowId: row,
-            outQty: qty,
-            outDate: now.toISOString().split('T')[0],
-            outTime: now.toTimeString().slice(0,5)
-        };
-        apiCall("POST", { action: "updateOut", data: data }, (res) => {
-            alert(res.message);
-            loadPhase3();
-        });
-    }
-
-    // 4. Dashboard
-    var globalData = [];
-    function loadDashboard() {
-        showTab('tab4');
-        apiCall("GET", { action: "getAllData" }, (data) => {
-            if(data.length > 0) globalData = data.slice(1);
-            renderDashboard();
-        });
-    }
-
-    function renderDashboard() {
-        let from = $('#dashFrom').val() ? new Date($('#dashFrom').val()) : null;
-        let to = $('#dashTo').val() ? new Date($('#dashTo').val()) : null;
-
-        let map = {};
-        let tIn=0, tPend=0, tStock=0, tOut=0;
-
-        globalData.forEach(row => {
-            // Check Date
-            let d = new Date(row[1]);
-            if(from && d < from) return;
-            if(to && d > to) return;
-
-            // Key = Line + Model
-            let key = row[3] + "||" + row[4];
-            if(!map[key]) map[key] = { line: row[3], model: row[4], in:0, rep:0, out:0 };
-
-            map[key].in += Number(row[5]||0);
-            map[key].rep += Number(row[7]||0);
-            map[key].out += Number(row[12]||0);
-        });
-
-        let tbody = "";
-        Object.values(map).forEach(o => {
-            let pending = o.in - o.rep;
-            let stock = o.rep - o.out;
-            
-            tIn += o.in; tPend += pending; tStock += stock; tOut += o.out;
-
-            tbody += `<tr>
-                <td>${o.line}</td><td>${o.model}</td>
-                <td class="fw-bold">${o.in}</td>
-                <td class="text-danger">${pending}</td>
-                <td class="text-primary">${o.rep}</td>
-                <td class="text-success">${o.out}</td>
-                <td class="bg-warning bg-opacity-25 fw-bold">${stock}</td>
-            </tr>`;
-        });
-
-        $('#dTotalIn').text(tIn); $('#dPending').text(tPend);
-        $('#dStock').text(tStock); $('#dOut').text(tOut);
-
-        if ($.fn.DataTable.isDataTable('#dashTable')) $('#dashTable').DataTable().destroy();
-        $('#dashTable tbody').html(tbody);
-        $('#dashTable').DataTable();
-    }
-
-    // 6. Component Report
-    function loadCompReport() {
-        showTab('tab6');
-        if(globalData.length === 0) { loadDashboard(); return; }
+        const result = await response.json();
         
-        let tbody = "";
-        globalData.forEach(row => {
-            let comp = row[10]; // K = Index 10
-            if(comp && comp !== "NA" && comp !== "") {
-                tbody += `<tr>
-                    <td>${formatDate(row[1])}</td>
-                    <td>${row[4]}</td>
-                    <td class="text-danger fw-bold">${comp}</td>
-                    <td>${row[6]}</td>
-                    <td>${row[7]}</td>
-                    <td>${row[11]}</td>
-                </tr>`;
-            }
-        });
+        if(result.status === 'success') {
+          alert("Data Saved Successfully!");
+        } else {
+          alert("Error saving: " + result.message);
+        }
+      } catch (e) {
+        // Sometimes Google Script saves correctly but returns a CORS error to the browser
+        // If this happens, we check the catch block.
+        console.error(e);
+        alert("Request sent. Please check sheet if data arrived. (CORS Warning)"); 
+      }
 
-        if ($.fn.DataTable.isDataTable('#compTable')) $('#compTable').DataTable().destroy();
-        $('#compBody').html(tbody);
-        $('#compTable').DataTable();
+      btn.disabled = false;
+      toggleLoader('saveLoader', false);
     }
 
-</script>
+    async function loadData() {
+      const d = document.getElementById('reportDate').value;
+      const l = document.getElementById('lineNo').value;
+      const s = document.getElementById('shiftId').value;
+      
+      const btn = document.getElementById('loadBtn');
+      btn.disabled = true;
+      toggleLoader('loadLoader', true);
+
+      try {
+        const url = `${SCRIPT_URL}?action=load&date=${d}&line=${l}&shift=${s}`;
+        const response = await fetch(url);
+        const data = await response.json();
+
+        if(data.found) {
+          document.getElementById('modelName').value = data.model;
+          
+          // Fill Grid
+          data.gridData.forEach((row, rIndex) => {
+            row.forEach((val, cIndex) => {
+              // Only fill if val is not 0 to keep UI clean
+              let input = document.getElementById(`cell-${rIndex}-${cIndex}`);
+              input.value = (val == 0) ? "" : val;
+            });
+          });
+          calculateTotals();
+          alert("Data loaded successfully.");
+        } else {
+          alert("No existing report found for this Date/Shift.");
+          // Clear grid
+          document.querySelectorAll('.grid-input').forEach(i => i.value = "");
+          document.getElementById('modelName').value = "";
+          calculateTotals();
+        }
+      } catch(e) {
+        alert("Error loading data.");
+        console.error(e);
+      }
+
+      btn.disabled = false;
+      toggleLoader('loadLoader', false);
+    }
+
+    function logout() { location.reload(); }
+  </script>
 </body>
 </html>
